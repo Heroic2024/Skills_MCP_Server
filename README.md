@@ -160,6 +160,254 @@ Add to your workspace `mcp_config.json`:
 }
 ```
 
+---
+
+## Claude Code CLI Setup
+
+Connect [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) to Skills MCP Server to give the CLI agent full access to your personal skills library, profiles, and prompts. Both **STDIO** (local process) and **HTTP/SSE** (remote/persistent daemon) transports are supported.
+
+### Prerequisites
+
+1. **Python**: Python `>= 3.10` is required. Verify your version:
+   ```bash
+   python3 --version
+   ```
+2. **Claude Code CLI**: Installed and authenticated:
+   ```bash
+   npm install -g @anthropic-ai/claude-code
+   claude --version
+   ```
+3. **Repository Setup**: Clone this repository and install its dependencies in a virtual environment:
+   ```bash
+   git clone https://github.com/rajpreetcodes/Skills_MCP_Server.git
+   cd Skills_MCP_Server
+   python3 -m venv .venv
+   source .venv/bin/activate       # On Windows: .venv\Scripts\activate
+   pip install -e .
+   ```
+   *(Required dependencies from `pyproject.toml`: `mcp[cli]>=2.2.0`, `fastapi>=0.141.0`, `uvicorn>=0.53.0`, `python-dotenv>=1.1.0`, `pyyaml>=6.0`)*
+4. **Skills Directory**: Have a directory containing your skills library (e.g., `~/.claude/skills` on macOS/Linux or `C:\Users\<username>\.claude\skills` on Windows).
+5. **Configuration (Optional)**: Set custom options in `config.json` or via environment variables (`SKILL_ROOT`, `PROFILE_DIR`, `AUTH_TOKEN`, `PORT`).
+
+### Option A: STDIO Transport
+
+**When to use STDIO**: Recommended for local development when Claude Code runs on the same machine as your skills library. Claude Code launches the server as a child process and communicates directly over standard input/output. No background daemon or open network port is required, and Claude Code manages the server process lifecycle automatically.
+
+#### 1. CLI Registration Command
+
+Run `claude mcp add` using the `--transport stdio` flag. The double dash (`--`) separates Claude Code options from the Python server command:
+
+```bash
+# From anywhere (replace with your actual paths):
+claude mcp add --transport stdio skills \
+  -- /path/to/Skills_MCP_Server/.venv/bin/python -m src.server \
+  --transport stdio \
+  --skill-root /path/to/skills
+```
+
+*Windows (PowerShell / CMD):*
+```powershell
+claude mcp add --transport stdio skills -- C:\path\to\Skills_MCP_Server\.venv\Scripts\python.exe -m src.server --transport stdio --skill-root C:\Users\<username>\.claude\skills
+```
+
+*From the repository root:*
+```bash
+cd /path/to/Skills_MCP_Server
+claude mcp add --transport stdio skills -- python -m src.server --transport stdio --skill-root /path/to/skills
+```
+
+> **Configuration Details:**
+> - **Python executable**: Point directly to your virtual environment Python binary (`.venv/bin/python` or `.venv\Scripts\python.exe`) so installed dependencies are used.
+> - **Entry point**: `-m src.server` runs the main server entry point.
+> - **Arguments**: `--transport stdio` specifies STDIO mode; `--skill-root` sets your skills folder (overrides default).
+> - **Scope options**: By default, registration applies locally to the current project (`~/.claude.json`). Add `--scope user` to make skills available across all projects, or `--scope project` to save to `.mcp.json` in the current project root.
+
+#### 2. Manual Configuration File Example
+
+Alternatively, add the server definition directly to `~/.claude.json` (user scope) or `.mcp.json` (project scope):
+
+```json
+{
+  "mcpServers": {
+    "skills": {
+      "type": "stdio",
+      "command": "/path/to/Skills_MCP_Server/.venv/bin/python",
+      "args": [
+        "-m",
+        "src.server",
+        "--transport",
+        "stdio",
+        "--skill-root",
+        "/path/to/skills"
+      ],
+      "cwd": "/path/to/Skills_MCP_Server"
+    }
+  }
+}
+```
+
+*Windows configuration:*
+```json
+{
+  "mcpServers": {
+    "skills": {
+      "type": "stdio",
+      "command": "C:\\path\\to\\Skills_MCP_Server\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "src.server",
+        "--transport",
+        "stdio",
+        "--skill-root",
+        "C:\\Users\\<username>\\.claude\\skills"
+      ],
+      "cwd": "C:\\path\\to\\Skills_MCP_Server"
+    }
+  }
+}
+```
+
+> **Note on `cwd`**: Specifying `"cwd"` pointing to the `Skills_MCP_Server` directory ensures Python can resolve the `src` package.
+
+### Option B: HTTP Transport
+
+**When to use HTTP**: Recommended when running the server on a remote host, inside Docker, or as a persistent daemon accessible simultaneously across multiple MCP clients (such as Claude Code CLI and Tasklet).
+
+> **Protocol Note:** Skills MCP Server implements the **Server-Sent Events (SSE)** protocol via `mcp.server.sse.SseServerTransport`. The MCP endpoint is `/mcp/sse`. It does not support Streamable HTTP.
+
+#### 1. Start the Server
+
+From the repository root, start the server in HTTP mode:
+
+```bash
+cd /path/to/Skills_MCP_Server
+source .venv/bin/activate
+
+# Local development (no authentication)
+python -m src.server --transport http --host 0.0.0.0 --port 8080 --skill-root /path/to/skills
+```
+
+If securing the server with a Bearer token (recommended for remote or shared deployments):
+```bash
+export AUTH_TOKEN="your-secure-token-here"
+python -m src.server --transport http --host 0.0.0.0 --port 8080 --skill-root /path/to/skills
+```
+
+Verify that the server is up and running:
+```bash
+curl http://localhost:8080/health
+# Response: {"status":"healthy","skills":...,"profiles":4,"version":"0.1.0"}
+```
+
+#### 2. Register in Claude Code CLI
+
+Register the SSE endpoint (`/mcp/sse`) with Claude Code:
+
+```bash
+# Standard registration (no auth)
+claude mcp add --transport sse skills http://localhost:8080/mcp/sse
+```
+
+*With Bearer token authentication:*
+```bash
+claude mcp add --transport sse skills http://localhost:8080/mcp/sse --header "Authorization: Bearer your-secure-token-here"
+```
+
+*(Note: In Claude Code v2.1.265+, `--transport http skills http://localhost:8080/mcp/sse` also automatically negotiates the SSE transport).*
+
+#### 3. Manual Configuration File Example
+
+If using `~/.claude.json` or `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "skills": {
+      "type": "sse",
+      "url": "http://localhost:8080/mcp/sse"
+    }
+  }
+}
+```
+
+*With authentication header:*
+```json
+{
+  "mcpServers": {
+    "skills": {
+      "type": "sse",
+      "url": "http://localhost:8080/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer your-secure-token-here"
+      }
+    }
+  }
+}
+```
+
+### Verify the Connection
+
+Follow these steps to confirm your connection and diagnose any potential configuration issues.
+
+#### 1. Inspect Server Status via CLI
+
+List registered MCP servers to verify connection status:
+```bash
+claude mcp list
+```
+Expected output confirms the server is connected:
+```text
+skills: ... - ✓ Connected
+```
+
+Inspect detailed server settings:
+```bash
+claude mcp get skills
+```
+
+#### 2. Verify in an Interactive Claude Code Session
+
+Start a Claude Code session:
+```bash
+claude
+```
+
+Inside the session, run the `/mcp` command:
+```text
+/mcp
+```
+Verify that `skills` appears active and exposes all 10 MCP tools:
+- `list_skills` — Browse skill catalog with pagination and category filters
+- `search_skills` — Natural language search across skills and tags
+- `get_skill` / `get_skills` — Retrieve full skill instructions
+- `list_profiles` / `get_profile` / `resolve_profile` — Manage and resolve skill bundles
+- `refresh_skills` — Reload skill registry after adding new skills
+- `get_categories` / `get_skill_stats` — Taxonomy and registry statistics
+
+Test the integration in chat:
+```text
+Can you search my skills for "python" using the search_skills tool?
+```
+
+#### 3. Troubleshooting Common Issues
+
+| Issue / Error | Cause | Solution |
+|---------------|-------|----------|
+| `ModuleNotFoundError: No module named 'mcp'` (STDIO) | Virtual environment is not used or dependencies are missing | Specify the full path to your virtualenv Python binary: `/path/to/Skills_MCP_Server/.venv/bin/python`. Ensure dependencies are installed via `pip install -e .`. |
+| `ModuleNotFoundError: No module named 'src'` (STDIO) | Python ran outside the repository directory | Add `"cwd": "/path/to/Skills_MCP_Server"` in your JSON configuration or pass `--env PYTHONPATH=/path/to/Skills_MCP_Server` when registering. |
+| Server status shows `Failed to connect` (STDIO) | Invalid Python or skills path | Verify that the Python executable exists, is executable, and `--skill-root` points to an existing directory. |
+| Server status shows `Failed to connect` (HTTP) | Server process is not running or incorrect URL | Check if the server is running with `curl http://localhost:8080/health`. Ensure the URL includes `/mcp/sse` (e.g. `http://localhost:8080/mcp/sse`). |
+| `401 Unauthorized` or `403 Forbidden` (HTTP) | Missing or mismatched Bearer token | Ensure the token passed in `--header "Authorization: Bearer <token>"` matches `AUTH_TOKEN` on the server. |
+| `Use SSE endpoint for MCP` error | Client contacted `/mcp/rpc` with standard HTTP POST | Use `--transport sse` and point to `http://localhost:8080/mcp/sse`. |
+| `No skills found` returned by tools | Skills folder is empty or improperly structured | Ensure `--skill-root` contains folders with valid `SKILL.md` files (see [Adding Skills](#adding-skills)). |
+
+To remove and re-register the server at any time:
+```bash
+claude mcp remove skills
+```
+
+---
+
 ## MCP Capabilities
 
 ### Tools
