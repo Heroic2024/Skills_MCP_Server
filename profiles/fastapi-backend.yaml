@@ -1,0 +1,50 @@
+name: fastapi-backend
+description: Production-grade FastAPI backend service development workflow
+version: "1.0.0"
+skills:
+  - fastapi
+  - pydantic
+  - sqlalchemy
+  - alembic
+  - pytest
+  - ponytail
+  - plan-eng-review
+  - system-design
+  - tdd
+  - review
+  - cso
+profiles: []
+stages:
+  planning:
+    - plan-eng-review
+    - system-design
+    - improve-codebase-architecture
+    - api-design
+    - database-design
+    - openapi-spec
+  implementation:
+    - fastapi
+    - pydantic
+    - sqlalchemy
+    - alembic
+    - ponytail
+    - auth-security
+    - error-handling
+  testing:
+    - tdd
+    - test-driven-development
+    - pytest
+    - api-testing
+    - qa
+  review:
+    - review
+    - receiving-code-review
+    - verification-before-completion
+    - cso
+    - security-arsenal
+    - web2-vuln-classes
+    - database-optimization
+    - production-readiness
+metadata:
+  tags: ["python", "fastapi", "backend", "api", "pytest", "database", "security"]
+  author: "QuirkSphere"
