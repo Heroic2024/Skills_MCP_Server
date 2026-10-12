@@ -1,0 +1,55 @@
+name: nextjs-fullstack
+description: Production-grade Next.js full-stack web application development workflow with App Router, TypeScript, and Tailwind CSS
+version: "1.0.0"
+skills:
+  - nextjs
+  - react
+  - typescript
+  - tailwindcss
+  - ui-ux-pro-max
+  - ponytail
+  - server-actions
+  - auth-security
+  - e2e-testing
+  - unit-testing
+  - review
+  - verification-before-completion
+profiles: []
+stages:
+  design:
+    - ui-ux-pro-max
+    - design-tokens-theme
+    - reusable-ui-primitives
+    - responsive-layout-design
+    - tailwind-styling-system
+    - ui-component-hierarchy
+    - state-feedback-ux
+    - impeccable
+  frontend:
+    - nextjs-app-router
+    - react-server-components
+    - client-component-boundaries
+    - state-management-data-fetching
+    - forms-validation-interactive
+    - typescript-component-architecture
+    - ponytail
+  backend:
+    - server-actions-route-handlers
+    - auth-session-management
+    - database-safe-queries
+    - input-validation-error-handling
+    - env-secrets-management
+    - caching-revalidation
+    - server-security-boundaries
+  verification:
+    - accessibility-a11y-audit
+    - lighthouse-web-vitals
+    - e2e-flow-testing
+    - unit-integration-testing
+    - typescript-lint-build-verification
+    - auth-security-validation
+    - review
+    - verification-before-completion
+metadata:
+  tags: ["nextjs", "react", "typescript", "fullstack", "tailwind", "web"]
+  author: "QuirkSphere"
