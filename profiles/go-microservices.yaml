@@ -1,0 +1,62 @@
+name: go-microservices
+description: Production-grade Go microservices development workflow with gRPC, concurrency patterns, and robust observability
+version: "1.0.0"
+skills:
+  - go-core
+  - go-microservices
+  - grpc-rest-api
+  - concurrency-patterns
+  - table-driven-tests
+  - go-race-detection
+  - benchmarking-profiling
+  - ponytail
+  - plan-eng-review
+  - system-design
+  - tdd
+  - review
+profiles: []
+stages:
+  architecture:
+    - plan-eng-review
+    - system-design
+    - microservice-boundaries
+    - domain-modeling
+    - grpc-rest-api-contracts
+    - service-communication-design
+    - dependency-graph-design
+    - config-observability-strategy
+  implementation:
+    - go-core
+    - ponytail
+    - grpc-http-handlers
+    - middleware-auth
+    - database-repository-transactions
+    - go-interfaces-di
+    - package-structure-design
+    - concurrency-goroutines-channels
+    - context-cancellation
+    - graceful-shutdown-error-handling
+  testing:
+    - tdd
+    - test-driven-development
+    - go-unit-testing
+    - table-driven-tests
+    - go-race-detection
+    - api-database-integration-testing
+    - mock-test-isolation
+    - test-coverage-audit
+    - qa
+  verification:
+    - review
+    - verification-before-completion
+    - security-dependency-audit
+    - govulncheck
+    - benchmarking-profiling
+    - pprof-cpu-memory-analysis
+    - static-analysis-formatting
+    - go-vet-linting
+    - build-verification
+    - production-readiness
+metadata:
+  tags: ["go", "microservices", "backend", "grpc", "api"]
+  author: "QuirkSphere"
