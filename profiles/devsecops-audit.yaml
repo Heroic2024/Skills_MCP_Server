@@ -1,0 +1,48 @@
+name: devsecops-audit
+description: Defensive DevSecOps audit workflow for IaC, containers, dependencies, and secrets
+version: "1.0.0"
+skills:
+  - cso
+  - security-arsenal
+  - web2-vuln-classes
+  - web2-recon
+  - container-security
+  - iac-security
+  - secrets-detection
+  - dependency-audit
+  - container-hardening
+  - review
+  - verification-before-completion
+profiles: []
+stages:
+  recon:
+    - web2-recon
+    - investigate
+    - secrets-detection
+    - dependency-audit
+    - attack-surface-mapping
+    - risk-prioritization
+  audit:
+    - cso
+    - security-arsenal
+    - web2-vuln-classes
+    - container-security
+    - iac-security
+    - compliance-policy-check
+  remediation:
+    - secure-remediation
+    - container-hardening
+    - iac-remediation
+    - secrets-rotation-guide
+    - dependency-patching
+    - patch-review
+  verification:
+    - review
+    - verification-before-completion
+    - security-regression-testing
+    - iac-validation
+    - secrets-exposure-verification
+    - audit-reporting
+metadata:
+  tags: ["devsecops", "security", "docker", "iac", "secrets-management", "compliance", "supply-chain-security"]
+  author: "QuirkSphere"
