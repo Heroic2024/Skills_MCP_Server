@@ -1,0 +1,52 @@
+name: rust-systems
+description: Memory-safe Rust systems engineering and CLI development workflow
+version: "1.0.0"
+skills:
+  - rust-core
+  - rust-architecture
+  - memory-safety-review
+  - cli-implementation
+  - concurrency-patterns
+  - cargo-test
+  - criterion-benchmarking
+  - ponytail
+  - plan-eng-review
+  - system-design
+  - tdd
+  - review
+profiles: []
+stages:
+  design:
+    - plan-eng-review
+    - system-design
+    - rust-architecture
+    - trait-api-design
+    - cli-interface-design
+    - error-handling-design
+  implementation:
+    - rust-core
+    - ponytail
+    - memory-safety-review
+    - concurrency-patterns
+    - async-rust
+    - cli-implementation
+    - unsafe-soundness-audit
+  testing:
+    - tdd
+    - test-driven-development
+    - cargo-test
+    - property-testing
+    - miri-validation
+    - fuzz-testing
+    - concurrency-testing
+    - qa
+  benchmarking:
+    - criterion-benchmarking
+    - profiling-optimization
+    - performance-regression-analysis
+    - memory-allocation-audit
+    - review
+    - verification-before-completion
+metadata:
+  tags: ["rust", "systems-programming", "memory-safety", "cli", "concurrency", "testing", "performance"]
+  author: "QuirkSphere"
