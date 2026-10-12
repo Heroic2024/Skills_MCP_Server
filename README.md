@@ -14,7 +14,7 @@ This MCP server was built to eliminate that bottleneck:
 
 1. **Zero Manual Copy-Pasting**: Point the server at your existing local skills folder and all skills are immediately available.
 2. **On-Demand Retrieval**: Models dynamically search (`search_skills`) and load (`get_skill`) only the relevant skill instructions when a task calls for them, keeping context windows lean.
-3. **Universal Portability**: By implementing the standard Model Context Protocol (MCP SDK 2.2.0), the same local skills library can be accessed across Tasklet, Claude Desktop, Claude.ai Web, Cursor, Windsurf, and CLI agents.
+3. **Universal Portability**: By implementing the standard Model Context Protocol (MCP SDK 2.2.0), the same local skills library can be accessed across Tasklet, Claude Desktop, Claude.ai Web, Cursor, Windsurf, Zed, and CLI agents.
 
 ## Architecture Overview
 
@@ -136,16 +136,216 @@ This outputs a public URL: `https://<tunnel-id>.tinyfi.sh`.
 
 ---
 
-### 3. Cursor & Windsurf
+### 3. Cursor
 
-In Cursor Settings -> Features -> MCP -> Add New MCP Server:
+In Cursor **Settings -> Features -> MCP -> Add New MCP Server**:
 - **Type**: `command`
-- **Command**: `python -m src.server --transport stdio --skill-root "C:\path\to\skills"`
-- **Working Directory**: `L:\My Innovations\Skills_MCP_Server`
+- **Command**: `python -m src.server --transport stdio --skill-root "/path/to/skills"`
+- **Working Directory**: `/path/to/Skills_MCP_Server`
 
 ---
 
-### 4. Antigravity IDE / Gemini IDE
+### 4. Windsurf IDE Setup
+
+Windsurf connects to Skills MCP Server over STDIO or HTTP/SSE using its Cascade AI assistant.
+
+#### Configuration File Location
+Windsurf stores MCP server configurations in `mcp_config.json`:
+- **macOS / Linux**: `~/.codeium/windsurf/mcp_config.json`
+- **Windows**: `%USERPROFILE%\.codeium\windsurf\mcp_config.json` (e.g. `C:\Users\<username>\.codeium\windsurf\mcp_config.json`)
+
+To open or edit this file in Windsurf:
+1. Open the Command Palette (`Cmd+Shift+P` on macOS, `Ctrl+Shift+P` on Windows/Linux).
+2. Run **Windsurf: Configure MCP Servers** (or click the **hammer/plug icon** in the Cascade panel and select **Configure** / **View raw config**).
+3. If the directory or file does not exist, create the `.codeium/windsurf/` directory and `mcp_config.json` file.
+
+#### STDIO Configuration Example (Recommended)
+
+Add Skills MCP Server under the top-level `"mcpServers"` key using your virtual environment Python:
+
+**macOS / Linux (`~/.codeium/windsurf/mcp_config.json`):**
+```json
+{
+  "mcpServers": {
+    "skills": {
+      "command": "/path/to/Skills_MCP_Server/.venv/bin/python",
+      "args": [
+        "-m",
+        "src.server",
+        "--transport",
+        "stdio",
+        "--skill-root",
+        "/path/to/skills"
+      ],
+      "cwd": "/path/to/Skills_MCP_Server",
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}
+```
+
+**Windows (`%USERPROFILE%\.codeium\windsurf\mcp_config.json`):**
+```json
+{
+  "mcpServers": {
+    "skills": {
+      "command": "C:\\path\\to\\Skills_MCP_Server\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "src.server",
+        "--transport",
+        "stdio",
+        "--skill-root",
+        "C:\\Users\\<username>\\.claude\\skills"
+      ],
+      "cwd": "C:\\path\\to\\Skills_MCP_Server",
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}
+```
+
+> **Windows Path Notes:**
+> - In JSON strings, Windows backslashes must be escaped with double backslashes (`C:\\path\\to\\...`) or written with forward slashes (`C:/path/to/...`).
+> - Point to the virtual environment binary at `.venv\Scripts\python.exe`.
+> - Always specify `"cwd"` pointing to your cloned `Skills_MCP_Server` repository root so Python can resolve the `src` package.
+
+#### Remote HTTP / SSE Option
+
+If running the standalone HTTP server (`python -m src.server --transport http --port 8080`), connect via Windsurf's `serverUrl` field:
+```json
+{
+  "mcpServers": {
+    "skills": {
+      "serverUrl": "http://localhost:8080/mcp/sse"
+    }
+  }
+}
+```
+
+#### Reload & Verify Connection
+1. Save `mcp_config.json`.
+2. In the Cascade panel, click the **Refresh** button next to MCP servers (or restart Windsurf).
+3. Confirm that `skills` shows a green connected status indicator.
+4. Test with Cascade in chat: *"List available skills using list_skills"* or check the tools list to see all 10 MCP tools.
+
+---
+
+### 5. Zed Editor Setup
+
+Zed integrates MCP servers via its Assistant panel using the `context_servers` setting.
+
+#### Configuration File Location
+Zed stores settings in `settings.json`:
+- **Linux & macOS**: `~/.config/zed/settings.json` (or `~/.zed/settings.json` on macOS)
+- **Windows**: `%APPDATA%\Zed\settings.json` (e.g. `C:\Users\<username>\AppData\Roaming\Zed\settings.json`)
+
+To open this file in Zed:
+1. Open the Command Palette (`Cmd+Shift+P` on macOS, `Ctrl+Shift+P` on Windows/Linux).
+2. Type and run **`zed: open settings`** (or press `Cmd-,` on macOS, `Ctrl-,` on Windows/Linux).
+3. If creating a new file, initialize it with `{}`.
+
+#### Preserving Existing Settings (Merge Guide)
+Do **not** overwrite your existing `settings.json`. Instead, add or merge the `"context_servers"` object into your configuration.
+
+**macOS / Linux (`~/.config/zed/settings.json`):**
+```json
+{
+  "context_servers": {
+    "skills": {
+      "command": "/path/to/Skills_MCP_Server/.venv/bin/python",
+      "args": [
+        "-m",
+        "src.server",
+        "--transport",
+        "stdio",
+        "--skill-root",
+        "/path/to/skills"
+      ],
+      "env": {
+        "PYTHONPATH": "/path/to/Skills_MCP_Server"
+      }
+    }
+  }
+}
+```
+
+**Windows (`%APPDATA%\Zed\settings.json`):**
+```json
+{
+  "context_servers": {
+    "skills": {
+      "command": "C:\\path\\to\\Skills_MCP_Server\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "src.server",
+        "--transport",
+        "stdio",
+        "--skill-root",
+        "C:\\Users\\<username>\\.claude\\skills"
+      ],
+      "env": {
+        "PYTHONPATH": "C:\\path\\to\\Skills_MCP_Server"
+      }
+    }
+  }
+}
+```
+
+**Merged Example with Pre-Existing Settings:**
+```json
+{
+  "theme": "One Dark",
+  "ui_font_size": 16,
+  "context_servers": {
+    "skills": {
+      "command": "/path/to/Skills_MCP_Server/.venv/bin/python",
+      "args": [
+        "-m",
+        "src.server",
+        "--transport",
+        "stdio",
+        "--skill-root",
+        "/path/to/skills"
+      ],
+      "env": {
+        "PYTHONPATH": "/path/to/Skills_MCP_Server"
+      }
+    }
+  }
+}
+```
+
+> **Why `PYTHONPATH` in Zed?**
+> Unlike Windsurf, Zed's `context_servers` schema does not include a `cwd` (working directory) property. Setting `"PYTHONPATH"` in the `"env"` block ensures Python can locate and import the `src` package regardless of the project folder opened in Zed. Alternatively, install the package in editable mode (`pip install -e .` inside `.venv`).
+
+#### Remote HTTP / SSE Option in Zed
+
+If running the standalone HTTP/SSE server:
+```json
+{
+  "context_servers": {
+    "skills": {
+      "url": "http://localhost:8080/mcp/sse"
+    }
+  }
+}
+```
+
+#### Reload & Verify Connection
+1. Save `settings.json` (Zed automatically hot-reloads configuration files upon saving).
+2. Open the Assistant panel (`Cmd-Alt-B` on macOS, `Ctrl-Alt-B` on Windows/Linux, or click the speech bubble in the right dock).
+3. If Zed displays a **Worktree Trust** prompt for local MCP server execution, select **Trust** to authorize the server.
+4. Verify server status under **Settings -> AI -> MCP Servers** (`agent: open settings` in the Command Palette).
+5. In the Assistant conversation, test by asking: *"Use the list_skills tool to search available skills."*
+
+---
+
+### 6. Antigravity IDE / Gemini IDE
 
 Add to your workspace `mcp_config.json`:
 ```json
@@ -159,6 +359,52 @@ Add to your workspace `mcp_config.json`:
   }
 }
 ```
+
+---
+
+### Cross-Platform Troubleshooting
+
+When configuring Skills MCP Server across editors (Windsurf, Zed, Claude Desktop, Cursor), refer to the following common issues and resolutions:
+
+#### 1. Windows Paths vs. Linux/macOS Paths
+- **JSON Escape Sequences**: In JSON string values on Windows, single backslashes are interpreted as escape characters. Always escape backslashes with double backslashes (e.g. `"C:\\Users\\user\\Skills_MCP_Server"`) or use forward slashes (`"C:/Users/user/Skills_MCP_Server"`).
+- **Tilde Expansion**: Paths containing `~` (e.g. `~/.venv/bin/python`) are not expanded by JSON parsers. Always specify full absolute paths (e.g. `/home/username/Skills_MCP_Server/...` or `/Users/username/...`).
+
+#### 2. Python Executables, Virtual Environments, and Missing Dependencies
+- **System Python vs. Virtual Environment**: Point directly to the virtual environment Python executable:
+  - Linux / macOS: `/path/to/Skills_MCP_Server/.venv/bin/python`
+  - Windows: `C:\path\to\Skills_MCP_Server\.venv\Scripts\python.exe`
+- **Missing Module Errors (`No module named 'mcp'`)**: Occurs when dependencies are not installed in the target Python environment. Run:
+  ```bash
+  cd /path/to/Skills_MCP_Server
+  source .venv/bin/activate       # On Windows: .venv\Scripts\activate
+  pip install -e .
+  ```
+
+#### 3. Spaces in Paths and JSON Escaping
+- If your path contains spaces (e.g. `C:\Users\John Doe\Skills_MCP_Server` or `L:\My Innovations\...`), write it plainly within JSON strings: `"C:\\Users\\John Doe\\Skills_MCP_Server"`.
+- Do **not** wrap arguments with additional shell quotes inside JSON strings (e.g., use `"--skill-root", "C:\\My Skills"` instead of `"--skill-root", "\"C:\\My Skills\""`).
+
+#### 4. Invalid JSON or Misplaced Configuration Keys
+- **Schema Differences**:
+  - Windsurf, Claude Desktop, Cursor, and Antigravity use top-level key **`"mcpServers"`**.
+  - Zed uses top-level key **`"context_servers"`**.
+- **JSON Syntax Errors**: Ensure there are no trailing commas before closing braces (`}`) or brackets (`]`), and verify that all keys and strings are enclosed in double quotes.
+
+#### 5. Incorrect Working Directories and Script Paths
+- The entry point `-m src.server` requires Python to resolve the `src` package directory.
+- In Windsurf and Claude Desktop: always set `"cwd": "/path/to/Skills_MCP_Server"`.
+- In Zed (which does not have a `cwd` key): set `"env": { "PYTHONPATH": "/path/to/Skills_MCP_Server" }` or run `pip install -e .`.
+
+#### 6. Unsupported Transports, Failed Connections, and Server Startup Errors
+- **Protocol**: Skills MCP Server implements STDIO and Server-Sent Events (SSE). It does not support Streamable HTTP POST RPC.
+- **SSE URL**: When using remote transport in Windsurf or Zed, point to the SSE endpoint: `http://localhost:8080/mcp/sse`.
+- **Garbled STDIO Frames**: Do not add print statements to `stdout` in server code; MCP protocol frames require clean standard I/O. All logging in Skills MCP Server is routed to `stderr`.
+
+#### 7. Reloading Editors and Checking Available MCP Tools
+- **Windsurf**: Click the hammer/refresh icon in the Cascade panel, or restart Windsurf.
+- **Zed**: Save `settings.json` (auto-reloads), or restart via Command Palette (`zed: restart`). Ensure worktree trust is granted.
+- **Verify Tools**: When connected, verify that all 10 MCP tools (`list_skills`, `search_skills`, `get_skill`, `get_skills`, `list_profiles`, `get_profile`, `resolve_profile`, `refresh_skills`, `get_categories`, `get_skill_stats`) appear in your editor's tool list.
 
 ---
 
